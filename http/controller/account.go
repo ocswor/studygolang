@@ -7,7 +7,9 @@
 package controller
 
 import (
+	"fmt"
 	"html/template"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strings"
@@ -97,6 +99,9 @@ func (self AccountController) Register(ctx echo.Context) error {
 	for _, field := range fields {
 		form.Set(field, ctx.FormValue(field))
 	}
+	// 设置一个默认头像
+	avatar_name := fmt.Sprintf("default%d.png", rand.Intn(6))
+	form.Set("avatar", avatar_name)
 
 	// 入库
 	errMsg, err := logic.DefaultUser.CreateUser(context.EchoContext(ctx), form)
