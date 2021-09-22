@@ -148,6 +148,8 @@ SG.replaceCodeChar = function(code) {
 SG.preProcess = function(content) {
 	// 对引用进行处理
 	content = content.replace(/&gt;/g, '>');
+	content = content.replace(/&lt;/g, '<');
+	content = content.replace(/&#34;/g, '"');
 	return content;
 }
 
