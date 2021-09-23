@@ -7,17 +7,22 @@ window.initPLUpload = function (options) {
 			$textarea = $('.main-textarea');
 		}
 		var text = $textarea.val();
-		text += '!['+file.name+']('+data.data.url+')';
+		if (options.ele == "upload-vedio"){
+			text += '<audio id="audio" controls="" preload="none"> <source id="mp3" src="'+data.data.url+'"></audio>'
+		}else {
+			text += '!['+file.name+']('+data.data.url+')';
+		}
+
 		$textarea.val(text);
 	}
-	
+
 	// 实例化一个plupload上传对象
 	var uploader = new plupload.Uploader({
 		browse_button : options.ele, // 触发文件选择对话框的按钮，为那个元素id
 		url : '/image/upload', // 服务器端的上传页面地址
 		filters: {
 			mime_types : [ //只允许上传图片
-				{ title : "图片文件", extensions : "jpg,gif,png,bmp" }
+				{ title : "图片文件", extensions : options.extensions || "jpg,gif,png,bmp" }
 			],
 			max_file_size : '5mb', // 最大只能上传 5mb 的文件
 			prevent_duplicates : true // 不允许选取重复文件
@@ -57,4 +62,10 @@ window.initPLUpload = function (options) {
 
 $(function(){
 	initPLUpload()
+
+	var video_options = {}
+	video_options.ele = 'upload-vedio'
+	video_options.extensions = "mp3,wav"
+	initPLUpload(video_options)
+	// console.log(video_options)
 });
