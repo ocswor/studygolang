@@ -10,6 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/studygolang/studygolang/common"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -389,12 +390,12 @@ func (this *SearcherLogic) DoSearch(q, field string, start, rows int) (*model.Re
 			}
 
 			if doc.HlContent == "" && doc.Content != "" {
-				utf8string := util.NewString(doc.Content)
+				utf8string := common.NewString(doc.Content)
 				maxLen := utf8string.RuneCount() - 1
 				if maxLen > searchContentLen {
 					maxLen = searchContentLen
 				}
-				doc.HlContent = util.NewString(doc.Content).Slice(0, maxLen)
+				doc.HlContent = common.NewString(doc.Content).Slice(0, maxLen)
 			}
 
 			doc.HlContent += "..."
@@ -601,4 +602,29 @@ func (this *SolrClient) Post() error {
 	logger.Infoln("post data result:", result)
 
 	return nil
+}
+
+func (this *SearcherLogic) DoMysqlSearch(q, field string, start, rows int) (*model.ResponseBody, error) {
+
+	articles := make([]*model.Article, 0)
+	if field == "text" {
+		field = "content"
+	}
+	err := MasterDB.Where("txt like ? or title like ?", "%"+q+"%", "%"+q+"%").Limit(rows, start).Find(&articles)
+	if err != nil {
+		return nil, err
+	}
+
+	documents := make([]*model.Document, 0)
+
+	for _, article := range articles {
+		document := model.NewSearchDocument(article, nil, q)
+		documents = append(documents, document)
+	}
+	responseBody := &model.ResponseBody{
+		NumFound: len(articles),
+		Start:    start,
+		Docs:     documents,
+	}
+	return responseBody, nil
 }

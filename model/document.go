@@ -8,6 +8,7 @@ package model
 
 import (
 	"fmt"
+	"github.com/studygolang/studygolang/common"
 	"html/template"
 	"regexp"
 	"strings"
@@ -207,6 +208,172 @@ func NewDocument(object interface{}, objectExt interface{}) *Document {
 	return document
 }
 
+func NewSearchDocument(object interface{}, objectExt interface{}, key string) *Document {
+	var document *Document
+	switch objdoc := object.(type) {
+	case *Topic:
+		viewnum, cmtnum, likenum := 0, 0, 0
+		if objectExt != nil {
+			// 传递过来的是一个 *TopicEx 对象，类型是有的，即时值是 nil，这里也和 nil 是不等
+			topicEx := objectExt.(*TopicUpEx)
+			if topicEx != nil {
+				viewnum = topicEx.View
+				cmtnum = topicEx.Reply
+				likenum = topicEx.Like
+			}
+		}
+
+		var sortTime = NewOftenTime()
+		if objdoc.Lastreplyuid != 0 {
+			sortTime = objdoc.Lastreplytime
+		} else {
+			sortTime = objdoc.Ctime
+		}
+
+		userLogin := &UserLogin{}
+		db.MasterDB.Id(objdoc.Uid).Get(userLogin)
+		document = &Document{
+			Id:      fmt.Sprintf("%d%d", TypeTopic, objdoc.Tid),
+			Objid:   objdoc.Tid,
+			Objtype: TypeTopic,
+			Title:   objdoc.Title,
+			Author:  userLogin.Username,
+			Uid:     userLogin.Uid,
+			PubTime: objdoc.Ctime.String(),
+			Content: objdoc.Content,
+			Tags:    objdoc.Tags,
+			Viewnum: viewnum,
+			Cmtnum:  cmtnum,
+			Likenum: likenum,
+
+			Nid: objdoc.Nid,
+
+			Top:           objdoc.Top,
+			Lastreplyuid:  objdoc.Lastreplyuid,
+			Lastreplytime: objdoc.Lastreplytime,
+			CreatedAt:     objdoc.Ctime,
+			UpdatedAt:     objdoc.Mtime,
+			SortTime:      sortTime,
+		}
+	case *Article:
+		var uid int
+		if objdoc.IsSelf {
+			userLogin := &UserLogin{}
+			db.MasterDB.Where("username=?", objdoc.AuthorTxt).Get(userLogin)
+			uid = userLogin.Uid
+		}
+
+		var sortTime = NewOftenTime()
+		if objdoc.Lastreplyuid != 0 {
+			sortTime = objdoc.Lastreplytime
+		} else {
+			sortTime = objdoc.Ctime
+		}
+
+		hlContent := common.SubContent(objdoc.Txt)
+		hlContent = strings.Replace(hlContent, key, fmt.Sprintf("<em>%s</em>", key), 1)
+		hlTitle := strings.Replace(objdoc.Title, key, fmt.Sprintf("<em>%s</em>", key), 1)
+
+		document = &Document{
+			Id:      fmt.Sprintf("%d%d", TypeArticle, objdoc.Id),
+			Objid:   objdoc.Id,
+			Objtype: TypeArticle,
+			Title:   FilterTxt(objdoc.Title),
+			Author:  objdoc.AuthorTxt,
+			Uid:     uid,
+			PubTime: objdoc.Ctime.String(),
+			Content: FilterTxt(objdoc.Txt),
+			Tags:    objdoc.Tags,
+			Viewnum: objdoc.Viewnum,
+			Cmtnum:  objdoc.Cmtnum,
+			Likenum: objdoc.Likenum,
+
+			Top:           objdoc.Top,
+			Lastreplyuid:  objdoc.Lastreplyuid,
+			Lastreplytime: objdoc.Lastreplytime,
+			CreatedAt:     objdoc.Ctime,
+			UpdatedAt:     objdoc.Mtime,
+			SortTime:      sortTime,
+			HlContent:     hlContent,
+			HlTitle:       hlTitle,
+		}
+	case *Resource:
+		viewnum, cmtnum, likenum := 0, 0, 0
+		if objectExt != nil {
+			resourceEx := objectExt.(*ResourceEx)
+			if resourceEx != nil {
+				viewnum = resourceEx.Viewnum
+				cmtnum = resourceEx.Cmtnum
+			}
+		}
+
+		var sortTime = NewOftenTime()
+		if objdoc.Lastreplyuid != 0 {
+			sortTime = objdoc.Lastreplytime
+		} else {
+			sortTime = objdoc.Ctime
+		}
+
+		userLogin := &UserLogin{}
+		db.MasterDB.Id(objdoc.Uid).Get(userLogin)
+		document = &Document{
+			Id:      fmt.Sprintf("%d%d", TypeResource, objdoc.Id),
+			Objid:   objdoc.Id,
+			Objtype: TypeResource,
+			Title:   objdoc.Title,
+			Author:  userLogin.Username,
+			Uid:     objdoc.Uid,
+			PubTime: objdoc.Ctime.String(),
+			Content: template.HTMLEscapeString(objdoc.Content),
+			Tags:    objdoc.Tags,
+			Viewnum: viewnum,
+			Cmtnum:  cmtnum,
+			Likenum: likenum,
+
+			Top:           0,
+			Lastreplyuid:  objdoc.Lastreplyuid,
+			Lastreplytime: objdoc.Lastreplytime,
+			CreatedAt:     objdoc.Ctime,
+			UpdatedAt:     objdoc.Mtime,
+			SortTime:      sortTime,
+		}
+	case *OpenProject:
+		userLogin := &UserLogin{}
+		db.MasterDB.Where("username=?", objdoc.Username).Get(userLogin)
+
+		var sortTime = NewOftenTime()
+		if objdoc.Lastreplyuid != 0 {
+			sortTime = objdoc.Lastreplytime
+		} else {
+			sortTime = objdoc.Ctime
+		}
+
+		document = &Document{
+			Id:      fmt.Sprintf("%d%d", TypeProject, objdoc.Id),
+			Objid:   objdoc.Id,
+			Objtype: TypeProject,
+			Title:   objdoc.Category + objdoc.Name,
+			Author:  objdoc.Author,
+			Uid:     userLogin.Uid,
+			PubTime: objdoc.Ctime.String(),
+			Content: objdoc.Desc,
+			Tags:    objdoc.Tags,
+			Viewnum: objdoc.Viewnum,
+			Cmtnum:  objdoc.Cmtnum,
+			Likenum: objdoc.Likenum,
+
+			Top:           0,
+			Lastreplyuid:  objdoc.Lastreplyuid,
+			Lastreplytime: objdoc.Lastreplytime,
+			CreatedAt:     objdoc.Ctime,
+			UpdatedAt:     objdoc.Mtime,
+			SortTime:      sortTime,
+		}
+	}
+
+	return document
+}
+
 var docRe = regexp.MustCompile("[\r　\n  \t\v]+")
 var docSpaceRe = regexp.MustCompile("[ ]+")
 
@@ -253,6 +420,13 @@ type ResponseBody struct {
 	NumFound int         `json:"numFound"`
 	Start    int         `json:"start"`
 	Docs     []*Document `json:"docs"`
+}
+
+type ResponseMysqlBody struct {
+	NumFound int        `json:"numFound"`
+	Start    int        `json:"start"`
+	Docs     []*Article `json:"docs"`
+	Type     int        `json:"type"`
 }
 
 type Highlighting struct {

@@ -8,6 +8,7 @@ package util
 
 import (
 	"fmt"
+	"github.com/studygolang/studygolang/common"
 	"reflect"
 	"strings"
 )
@@ -37,7 +38,7 @@ func Struct2Map(dest map[string]interface{}, src interface{}) error {
 		tag = strings.Split(tag, ",")[0]
 
 		if tag == "" {
-			tag = UnderscoreName(fieldType.Name)
+			tag = common.UnderscoreName(fieldType.Name)
 		}
 		dest[tag] = fieldValue.Interface()
 	}

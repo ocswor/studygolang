@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"github.com/studygolang/studygolang/common"
 	"html/template"
 	"net/smtp"
 	"strings"
@@ -136,7 +137,7 @@ var emailFuncMap = template.FuncMap{
 	"time_format": func(t model.OftenTime) string {
 		return time.Time(t).Format("01-02")
 	},
-	"substring": util.Substring,
+	"substring": common.Substring,
 }
 
 var emailTpl = template.Must(template.New("email.html").Funcs(emailFuncMap).ParseFiles(config.TemplateDir + "email.html"))

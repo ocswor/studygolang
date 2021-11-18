@@ -26,8 +26,7 @@ func (SearchController) Search(ctx echo.Context) error {
 
 	rows := 50
 
-	respBody, err := logic.DefaultSearcher.DoSearch(q, field, (p-1)*rows, rows)
-
+	respBody, err := logic.DefaultSearcher.DoMysqlSearch(q, field, (p-1)*rows, rows)
 	data := map[string]interface{}{
 		"respBody": respBody,
 		"q":        q,

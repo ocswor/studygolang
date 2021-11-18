@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // Package utf8string provides an efficient way to index strings by rune rather than by byte.
-package util
+package common
 
 import (
 	"errors"
@@ -238,4 +238,14 @@ func UnderscoreName(name string) string {
 func SafeHtml(s string) string {
 	r := strings.NewReplacer("<input", "&lt;input", "<a ", "&lt; a")
 	return r.Replace(s)
+}
+
+func SubContent(content string) string {
+	utf8string := NewString(content)
+	maxLen := utf8string.RuneCount() - 1
+	if maxLen > 350 {
+		maxLen = 350
+	}
+	hlContent := NewString(content).Slice(0, maxLen)
+	return hlContent
 }

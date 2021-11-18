@@ -9,6 +9,7 @@ package http
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/studygolang/studygolang/common"
 	"html/template"
 	"math"
 	"math/rand"
@@ -113,7 +114,7 @@ var funcMap = template.FuncMap{
 		}
 		return false
 	},
-	"substring": util.Substring,
+	"substring": common.Substring,
 	"add": func(nums ...interface{}) int {
 		total := 0
 		for _, num := range nums {
@@ -174,7 +175,7 @@ var funcMap = template.FuncMap{
 		json.Unmarshal([]byte(str), &result)
 		return result
 	},
-	"safeHtml": util.SafeHtml,
+	"safeHtml": common.SafeHtml,
 	"imageUrl": func(uri string, isHttps bool) string {
 		if !strings.HasPrefix(uri, "http") {
 			cdnDomain := global.App.CanonicalCDN(isHttps)
