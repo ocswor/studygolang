@@ -15,7 +15,7 @@ sitemap
 assets
 
 node_modules
-
+env.sample.ini
 .vscode
 
 # Architecture specific extensions/prefixes
