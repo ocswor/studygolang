@@ -49,7 +49,8 @@ func EchoLoggerWitchConfig(loggerConfig *LoggerConfig) echo.MiddlewareFunc {
 			} else {
 				params = ctx.QueryParams()
 			}
-			objLogger.Infoln("request params:", params)
+			//objLogger.Infoln("request params:", params)
+			objLogger.Infof("request params:%v", params)
 
 			remoteAddr := ctx.RealIP()
 
