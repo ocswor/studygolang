@@ -7,7 +7,6 @@
 package controller
 
 import (
-	"github.com/polaris1119/logger"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -241,7 +240,7 @@ func (TopicController) Create(ctx echo.Context) error {
 	}
 
 	forms, _ := ctx.FormParams()
-	logger.Infof("create topic :%v", forms)
+	//logger.Infof("create topic :%v", forms)
 	tid, err := logic.DefaultTopic.Publish(context.EchoContext(ctx), me, forms)
 	if err != nil {
 		return fail(ctx, 3, "内部服务错误:"+err.Error())

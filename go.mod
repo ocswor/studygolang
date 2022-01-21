@@ -47,8 +47,8 @@ require (
 	github.com/polaris1119/times v0.0.0-20160420102536-14f7f3ba487e
 	github.com/qiniu/api.v6 v6.0.9+incompatible
 	github.com/qiniu/bytes v0.0.0-20140728010635-4887e7b2bde3 // indirect
+	github.com/qiniu/go-sdk/v7 v7.11.0
 	github.com/qiniu/rpc v0.0.0-20140728010754-30c22466d920 // indirect
-	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/smartystreets/goconvey v0.0.0-20190710185942-9d28bd7c0945 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
@@ -57,11 +57,9 @@ require (
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/twinj/uuid v1.0.0
 	github.com/tylerb/graceful v1.2.15
-	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	golang.org/x/oauth2 v0.0.0-20190226205417-e64efc72b421
-	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
-	golang.org/x/text v0.3.6
+	golang.org/x/text v0.3.7
 	golang.org/x/time v0.0.0-20210611083556-38a9dc6acbc6 // indirect
 	gopkg.in/stretchr/testify.v1 v1.2.2 // indirect
 	gopkg.in/validator.v2 v2.0.0-20180514200540-135c24b11c19 // indirect

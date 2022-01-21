@@ -8,8 +8,9 @@ package logic
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
+	"github.com/qiniu/go-sdk/v7/auth/qbox"
+	"github.com/qiniu/go-sdk/v7/storage"
 	"image"
 	_ "image/gif"
 	_ "image/jpeg"
@@ -32,9 +33,6 @@ import (
 	"github.com/polaris1119/goutils"
 	"github.com/polaris1119/logger"
 	"github.com/polaris1119/times"
-	"github.com/qiniu/api.v6/conf"
-	"github.com/qiniu/api.v6/io"
-	"github.com/qiniu/api.v6/rs"
 )
 
 const (
@@ -44,115 +42,82 @@ const (
 // http://developer.qiniu.com/code/v6/sdk/go-sdk-6.html
 type UploaderLogic struct {
 	bucketName string
+	accessKey  string
+	secretKey  string
 
 	uptoken   string
 	tokenTime time.Time
 	locker    sync.RWMutex
 }
 
-var DefaultUploader = &UploaderLogic{}
+var DefaultUploader = &UploaderLogic{
+	accessKey:  config.ConfigFile.MustValue("qiniu", "access_key"),
+	bucketName: config.ConfigFile.MustValue("qiniu", "bucket_name"),
+	secretKey:  config.ConfigFile.MustValue("qiniu", "secret_key"),
+}
 
 func (this *UploaderLogic) InitQiniu() {
-	conf.ACCESS_KEY = config.ConfigFile.MustValue("qiniu", "access_key")
-	conf.SECRET_KEY = config.ConfigFile.MustValue("qiniu", "secret_key")
-	conf.UP_HOST = config.ConfigFile.MustValue("qiniu", "up_host", conf.UP_HOST)
-	this.bucketName = config.ConfigFile.MustValue("qiniu", "bucket_name")
+
 }
 
 // 生成上传凭证
 func (this *UploaderLogic) genUpToken() {
-	// 避免服务器时间不同步，45分钟就更新 token
-	if this.uptoken != "" && this.tokenTime.Add(45*time.Minute).After(time.Now()) {
-		return
-	}
 
-	putPolicy := rs.PutPolicy{
-		Scope: this.bucketName,
-		// CallbackUrl:  callbackUrl,
-		// CallbackBody: callbackBody,
-		// ReturnUrl:    returnUrl,
-		// ReturnBody:   returnBody,
-		// AsyncOps:     asyncOps,
-		// EndUser:      endUser,
-		// 指定上传凭证有效期（默认1小时）
-		// Expires:      expires,
-	}
-
-	this.locker.Lock()
-	this.uptoken = putPolicy.Token(nil)
-	this.locker.Unlock()
-	this.tokenTime = time.Now()
 }
 
 func (this *UploaderLogic) uploadLocalFile(localFile, key string) (err error) {
-	this.genUpToken()
-
-	var ret io.PutRet
-	var extra = &io.PutExtra{
-		// Params:   params,
-		// MimeType: mieType,
-		// Crc32:    crc32,
-		// CheckCrc: CheckCrc,
+	putPolicy := storage.PutPolicy{
+		Scope: this.bucketName,
 	}
-
-	// ret       变量用于存取返回的信息，详情见 io.PutRet
-	// uptoken   为业务服务器生成的上传口令
-	// key       为文件存储的标识(文件名)
-	// localFile 为本地文件名
-	// extra     为上传文件的额外信息，详情见 io.PutExtra，可选
-	err = io.PutFile(nil, &ret, this.uptoken, key, localFile, extra)
-
+	mac := qbox.NewMac(this.accessKey, this.secretKey)
+	upToken := putPolicy.UploadToken(mac)
+	cfg := storage.Config{}
+	// 空间对应的机房
+	cfg.Zone = &storage.ZoneHuadong
+	// 是否使用https域名
+	cfg.UseHTTPS = true
+	// 上传是否使用CDN上传加速
+	cfg.UseCdnDomains = false
+	resumeUploader := storage.NewResumeUploaderV2(&cfg)
+	ret := storage.PutRet{}
+	putExtra := storage.RputV2Extra{}
+	err = resumeUploader.PutFile(context.Background(), &ret, upToken, key, localFile, &putExtra)
 	if err != nil {
-		//上传产生错误
 		logger.Errorln("io.PutFile failed:", err)
-		return
+		return err
 	}
-
-	//上传成功，处理返回值
-	logger.Debugln(ret.Hash, ret.Key)
+	logger.Debugln(ret.Key, ret.Hash)
 
 	return
 }
 
 func (this *UploaderLogic) uploadMemoryFile(r gio.Reader, key string, size int) (err error) {
-	this.genUpToken()
-
-	var ret io.PutRet
-	var extra = &io.PutExtra{
-		// Params:   params,
-		// MimeType: mieType,
-		// Crc32:    crc32,
-		// CheckCrc: CheckCrc,
+	putPolicy := storage.PutPolicy{
+		Scope: this.bucketName,
 	}
-
-	// ret       变量用于存取返回的信息，详情见 io.PutRet
-	// uptoken   为业务服务器端生成的上传口令
-	// key       为文件存储的标识
-	// r         为io.Reader类型，用于从其读取数据
-	// extra     为上传文件的额外信息,可为空， 详情见 io.PutExtra, 可选
-	err = io.Put2(nil, &ret, this.uptoken, key, r, int64(size), extra)
-
-	// 上传产生错误
+	mac := qbox.NewMac(this.accessKey, this.secretKey)
+	upToken := putPolicy.UploadToken(mac)
+	cfg := storage.Config{}
+	// 空间对应的机房
+	cfg.Zone = &storage.ZoneHuadong
+	// 是否使用https域名
+	cfg.UseHTTPS = true
+	// 上传是否使用CDN上传加速
+	cfg.UseCdnDomains = false
+	formUploader := storage.NewFormUploader(&cfg)
+	ret := storage.PutRet{}
+	//putExtra := storage.PutExtra{
+	//	Params: map[string]string{
+	//		"x:name": "github logo",
+	//	},
+	//}
+	putExtra := storage.PutExtra{}
+	err = formUploader.Put(context.Background(), &ret, upToken, key, r, int64(size), &putExtra)
 	if err != nil {
-		logger.Errorln("io.Put failed:", err)
-
-		errInfo := make(map[string]interface{})
-		err = json.Unmarshal([]byte(err.Error()), &errInfo)
-		if err != nil {
-			logger.Errorln("io.Put Unmarshal failed:", err)
-			return
-		}
-
-		code, ok := errInfo["code"]
-		if ok && code == 614 {
-			err = nil
-		}
-
-		return
+		logger.Errorln("io.PutFile failed:", err)
+		return err
 	}
-
-	// 上传成功，处理返回值
-	logger.Debugln(ret.Hash, ret.Key)
+	logger.Debugln(ret.Key, ret.Hash)
 
 	return
 }
